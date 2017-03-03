@@ -84,7 +84,7 @@ public class Project2compilers {
     
     
     public static void main(String[] args)  throws IOException  {
-        System.out.println("Input file: " + args[0]);
+        ////System.out.println("Input file: " + args[0]);
         URL path = Project2compilers.class.getResource(args[0]);
         File file = new File(path.getFile());  
         File out = new File("tokens.txt");
@@ -102,18 +102,18 @@ public class Project2compilers {
             line = line + " ";
             input[i] = line;
             if(!line.isEmpty()) {
-                System.out.println();
+                //System.out.println();
                 //line = line + " ";
-                System.out.println("INPUT: " + line);
+                //System.out.println("INPUT: " + line);
                 if(line.contains("$"))  {
-                    System.out.println("============= END OF FILE ==============");
+                    //System.out.println("============= END OF FILE ==============");
                     return;
                 }
                 readChar(line);
                 lineDepth = 0;
             }
         }
-        System.out.println("Tests below ----------------------------------------");
+        //System.out.println("Tests below ----------------------------------------");
         bw.write("$");
         bw.close(); //finish writing tokens to file
         parser(out);
@@ -130,28 +130,24 @@ public class Project2compilers {
 
         j = 0;
         program(tokens[j]);
-        System.out.println("-----------------------------------------------------------");
-        System.out.println("ACCEPT");
-        /*
-        while(tokens[j] != null)    {
-            declarationlist(tokens[j]);
-            j++;
-        }
-        */
+        //System.out.println("-----------------------------------------------------------");
+        //System.out.println("ACCEPT");
+        
     }//---------------------------------------------------------------
 
     public static void rejected()   {
-        System.out.println("ERROR: " + tokens[j]);
-        System.out.println("REJECT");
+        //System.out.println("ERROR: " + tokens[j]);
+        System.out.print("REJECT");
         System.exit(0);
     }
     public static void accept() {
-        System.out.println("Detected $, finished parsing.");
+        //System.out.println("Detected $, finished parsing.");
+        System.out.print("ACCEPT");
     }
     //----------------------------------------------------------------
     public static void program(String token)    {
-        System.out.println("invoked program");
-        System.out.println(token);
+        //System.out.println("invoked program");
+        //System.out.println(token);
         if(isTypeSpec(token))   {
             j++;
             if(tokens[j].contains("ID: "))  {
@@ -164,8 +160,8 @@ public class Project2compilers {
         else rejected();
     }//-------------------------------------------------------------------------
     public static void declarationlist2(String token)   { //good
-        System.out.println("invoked declarationlist2");
-        System.out.println(token);
+        //System.out.println("invoked declarationlist2");
+        //System.out.println(token);
         //first of declaration
         if(isTypeSpec(token))   {
             j++;
@@ -182,8 +178,8 @@ public class Project2compilers {
         
     }//--------------------------------------------------------------------
     public static void VF(String token) {
-        System.out.println("invoked VF");
-        System.out.println(token);
+        //System.out.println("invoked VF");
+        //System.out.println(token);
         // first of A
         if(token.equals(";") || token.equals("["))  {
             A(token);
@@ -194,8 +190,8 @@ public class Project2compilers {
         else rejected();
     }//-------------------------------------------------------------------------
     public static void vardeclaration(String token)    {
-        System.out.println("invoked vardeclaration");
-        System.out.println(token);
+        //System.out.println("invoked vardeclaration");
+        //System.out.println(token);
         
         if(isTypeSpec(token))   {
             j++;
@@ -208,8 +204,8 @@ public class Project2compilers {
         else rejected();
     }//----------------------------------------------------------------------------
     public static void A(String token)  {
-        System.out.println("invoked A");
-        System.out.println(token);
+        //System.out.println("invoked A");
+        //System.out.println(token);
         //A -> ; | [NUM]
         if(token.equals(";"))  {
             j++;
@@ -232,8 +228,8 @@ public class Project2compilers {
         else rejected();
     }//-------------------------------------------------------------------------
     public static void AX(String token) {
-        System.out.println("invoked AX");
-        System.out.println(token);
+        //System.out.println("invoked AX");
+        //System.out.println(token);
         if(token.equals("("))   {
             j++;
             params(tokens[j]);
@@ -246,8 +242,8 @@ public class Project2compilers {
         else rejected();
     }//-------------------------------------------------------------------------
     public static void params(String token) {
-        System.out.println("invoked params");
-        System.out.println(token);
+        //System.out.println("invoked params");
+        //System.out.println(token);
         if(token.contains("KEYWORD: int"))  {
             j++;
             if(tokens[j].contains("ID: "))  {
@@ -272,8 +268,8 @@ public class Project2compilers {
         else rejected();
     }//-------------------------------------------------------------------------
     public static void paramlist2(String token) {
-        System.out.println("invoked paramlist2");
-        System.out.println(token);
+        //System.out.println("invoked paramlist2");
+        //System.out.println(token);
         if(token.equals(","))   {
             j++;
             if(isTypeSpec(tokens[j]))   {
@@ -289,8 +285,8 @@ public class Project2compilers {
         }// goes to empty
     }//-------------------------------------------------------------------------
     public static void B(String token)  {
-        System.out.println("invoked B");
-        System.out.println(token);
+        //System.out.println("invoked B");
+        //System.out.println(token);
         if(token.equals("[")) {
             j++;
             if(tokens[j].equals("]"))   {
@@ -300,8 +296,8 @@ public class Project2compilers {
         } // or empty
     }//-------------------------------------------------------------------------
     public static void compoundstmt(String token)  {
-        System.out.println("invoked compound");
-        System.out.println(token);
+        //System.out.println("invoked compound");
+        //System.out.println(token);
         if(token.equals("{"))   {
             j++;
             localdeclarations2(tokens[j]);
@@ -314,8 +310,8 @@ public class Project2compilers {
         else rejected();
     }//-------------------------------------------------------------------------
     public static void localdeclarations2(String token) {
-        System.out.println("invoked localdeclarations2");
-        System.out.println(token);
+        //System.out.println("invoked localdeclarations2");
+        //System.out.println(token);
         //first of var-declaration
         if(isTypeSpec(token))  {
             vardeclaration(token);
@@ -323,8 +319,8 @@ public class Project2compilers {
         } // or empty
     }//-------------------------------------------------------------------------
     public static void statementlist2(String token) {
-        System.out.println("invoked statementlist2");
-        System.out.println(token);
+        //System.out.println("invoked statementlist2");
+        //System.out.println(token);
         //first of statement
         if(token.contains("ID: ") || token.contains("NUM") ||
             token.contains("KEYWORD: if") || token.contains("KEYWORD: while") ||
@@ -337,8 +333,8 @@ public class Project2compilers {
         // or empty
     }//-------------------------------------------------------------------------
     public static void statement(String token)  {
-        System.out.println("invoked statement");
-        System.out.println(token);
+        //System.out.println("invoked statement");
+        //System.out.println(token);
         //first of expression-stmt
         if(token.contains("ID: ") || token.contains("NUM") || token.equals("(") ||
            token.equals(";")) {
@@ -364,8 +360,8 @@ public class Project2compilers {
         else rejected();
     }//-------------------------------------------------------------------------
     public static void selectionstmt(String token)  { 
-        System.out.println("invoked selectionstmt");
-        System.out.println(token);
+        //System.out.println("invoked selectionstmt");
+        //System.out.println(token);
         if(token.contains("KEYWORD: if"))   {
             j++;
             if(tokens[j].equals("(")) {
@@ -383,8 +379,8 @@ public class Project2compilers {
         else rejected();
     }//-------------------------------------------------------------------------
     public static void C(String token)  {
-        System.out.println("invoked C");
-        System.out.println(token);
+        //System.out.println("invoked C");
+        //System.out.println(token);
         if(token.contains("KEYWORD: else"))     {
             j++;
             statement(tokens[j]);
@@ -392,8 +388,8 @@ public class Project2compilers {
         // or empty
     }//-------------------------------------------------------------------------
     public static void iterationstmt(String token)  {
-        System.out.println("invoked iterationstmt");
-        System.out.println(token);
+        //System.out.println("invoked iterationstmt");
+        //System.out.println(token);
         if(token.contains("KEYWORD: while")) {
             j++;
             if(tokens[j].equals("(")) {
@@ -410,8 +406,8 @@ public class Project2compilers {
         else rejected();
     }//-------------------------------------------------------------------------
     public static void returnstmt(String token) {
-        System.out.println("invoked returnstmt");
-        System.out.println(token);
+        //System.out.println("invoked returnstmt");
+        //System.out.println(token);
         if(token.contains("KEYWORD: return"))   {
             j++;
             D(tokens[j]);    
@@ -420,8 +416,8 @@ public class Project2compilers {
     }
     //-----------------------------------------------------------------------
     public static void D(String token)  {
-        System.out.println("invoked D");
-        System.out.println(token);
+        //System.out.println("invoked D");
+        //System.out.println(token);
         // first of expression
         if(token.equals("(") || token.contains("ID: ") || token.contains("NUM"))   { 
             expression(token);
@@ -436,8 +432,8 @@ public class Project2compilers {
         else rejected();
     }// ------------------------------------------------------------------------
     public static void expression(String token) { 
-        System.out.println("invoked expression");
-        System.out.println(token);
+        //System.out.println("invoked expression");
+        //System.out.println(token);
         if(token.contains("ID: "))  {
             j++;
             EV(tokens[j]);
@@ -462,8 +458,8 @@ public class Project2compilers {
         else rejected();
     }//-------------------------------------------------------------------------
     public static void EV(String token) {
-        System.out.println("invoked EV");
-        System.out.println(token);
+        //System.out.println("invoked EV");
+        //System.out.println(token);
         // first of E
         if(token.equals("["))   {
             E(token);
@@ -488,8 +484,8 @@ public class Project2compilers {
         
     }//-------------------------------------------------------------------------
     public static void EV2(String token)    {
-        System.out.println("invoked EV2");
-        System.out.println(token);
+        //System.out.println("invoked EV2");
+        //System.out.println(token);
         //E -> = expression
         if(token.equals("="))   {
             j++;
@@ -513,8 +509,8 @@ public class Project2compilers {
         //??? else rejected();
     }//-------------------------------------------------------------------------
     public static void E(String token)  {
-        System.out.println("invoked E");
-        System.out.println(token);
+        //System.out.println("invoked E");
+        //System.out.println(token);
         if(token.equals("["))   {
             j++;
             expression(tokens[j]);
@@ -524,8 +520,8 @@ public class Project2compilers {
         }// or empty
     }//-------------------------------------------------------------------------
     public static void F(String token)  {
-        System.out.println("invoked F");
-        System.out.println(token);
+        //System.out.println("invoked F");
+        //System.out.println(token);
         if(isRelop(token))  {
             relop(token);
             factor(tokens[j]);
@@ -534,8 +530,8 @@ public class Project2compilers {
         }// or empty
     }//-------------------------------------------------------------------------
     public static void relop(String token) {
-        System.out.println("invoked relop");
-        System.out.println(token);
+        //System.out.println("invoked relop");
+        //System.out.println(token);
         if(token.equals("<=") || token.equals("<") || token.equals(">")
             || token.equals(">=") || token.equals("==") || token.equals("!=")) {
             
@@ -545,8 +541,8 @@ public class Project2compilers {
     }
     // -------------------------------------------------------------------------
     public static void additiveexpression2(String token) {
-        System.out.println("invoked additiveexpression2");
-        System.out.println(token);
+        //System.out.println("invoked additiveexpression2");
+        //System.out.println(token);
         //first of addop
         if(isAddop(token))  {
             addop(token);
@@ -556,16 +552,16 @@ public class Project2compilers {
         } // or empty
     }//-------------------------------------------------------------------------
     public static void addop(String token) {
-        System.out.println("invoked addop");
-        System.out.println(token);
+        //System.out.println("invoked addop");
+        //System.out.println(token);
         if(token.equals("+") || token.equals("-"))  {
             j++;
         }
         else rejected();
     }//-------------------------------------------------------------------------
     public static void term2(String token) {
-        System.out.println("invoked term2");
-        System.out.println(token);
+        //System.out.println("invoked term2");
+        //System.out.println(token);
         //first of mulop
         if(isMulop(token))  {
             mulop(token);
@@ -574,16 +570,16 @@ public class Project2compilers {
         }// or empty
     }//-------------------------------------------------------------------------
     public static void mulop(String token) {
-        System.out.println("invoked mulop");
-        System.out.println(token);
+        //System.out.println("invoked mulop");
+        //System.out.println(token);
         if(token.equals("*") || token.equals("/"))  {
             j++;
         }
         else rejected();
     }//-------------------------------------------------------------------------
     public static void factor(String token) { // CHECK THIS *******************
-        System.out.println("invoked factor");
-        System.out.println(token);
+        //System.out.println("invoked factor");
+        //System.out.println(token);
         
         if(token.equals("("))   {
             j++;
@@ -603,8 +599,8 @@ public class Project2compilers {
         else rejected();
     }//-------------------------------------------------------------------------
     public static void FX(String token) {
-        System.out.println("invoked FX");
-        System.out.println(token);
+        //System.out.println("invoked FX");
+        //System.out.println(token);
         //first of E
         if(token.equals("["))   {
             E(token);
@@ -618,16 +614,16 @@ public class Project2compilers {
         }// or empty
     }//-------------------------------------------------------------------------
     public static void args(String token) { // good
-        System.out.println("invoked args");
-        System.out.println(token);
+        //System.out.println("invoked args");
+        //System.out.println(token);
         // first of arg-list
         if(token.equals("(") || token.contains("ID: ") || token.contains("NUM"))   { 
             argslist(token);
         }// or empty
     }//-------------------------------------------------------------------------
     public static void argslist(String token) {
-        System.out.println("invoked argslist");
-        System.out.println(token);
+        //System.out.println("invoked argslist");
+        //System.out.println(token);
         //first of expression
         if(token.equals("(") || token.contains("ID: ") || token.contains("NUM")){
             expression(token);
@@ -636,8 +632,8 @@ public class Project2compilers {
         else rejected();
     }//-------------------------------------------------------------------------
     public static void argslist2(String token) {
-        System.out.println("invoked argslist2");
-        System.out.println(token);
+        //System.out.println("invoked argslist2");
+        //System.out.println(token);
         // must start with ","
         if(token.equals(","))   {
             j++;
@@ -705,10 +701,10 @@ public class Project2compilers {
             next = Character.toString(chars[index+1]);
             sb.append(next);
             if(next.matches("[\\s]"))   {
-                System.out.println();
+                //System.out.println();
             }
             else    {
-                System.out.println("ERROR: " + sb);
+                //System.out.println("ERROR: " + sb);
                 
             }
         }
@@ -717,7 +713,7 @@ public class Project2compilers {
                 next = Character.toString(chars[index+1]);
                 sb.append(next);
                 if(next.equals("<") || next.equals(">") || next.equals("="))    {
-                    //System.out.println(next);
+                    ////System.out.println(next);
                 }
                 
             }
@@ -744,7 +740,7 @@ public class Project2compilers {
             while(x < chars.length) {
                 switch(chars[x])   {
                     case ' ':
-                        System.out.println();
+                        //System.out.println();
                     default:
                         System.out.print(chars[x]);
                 }
@@ -767,104 +763,104 @@ public class Project2compilers {
     if(blockDepth == 0 && lineDepth == 0)  {    
         if(token.matches("[a-zA-Z]+"))  {
             if(token.equals("else"))    {
-                System.out.println("KEYWORD: " + token);
+                //System.out.println("KEYWORD: " + token);
                 output("KEYWORD: " + token);
                 
             }
             else if(token.equals("if")) {
-                System.out.println("KEYWORD: " + token);
+                //System.out.println("KEYWORD: " + token);
                 output("KEYWORD: " + token);
                 
             }
             else if(token.equals("float")) {
-                System.out.println("KEYWORD: " + token);
+                //System.out.println("KEYWORD: " + token);
                 output("KEYWORD: " + token);
                 
             }
             else if(token.equals("int")) {
-                System.out.println("KEYWORD: " + token);
+                //System.out.println("KEYWORD: " + token);
                 output("KEYWORD: " + token);
                 
             }
             else if(token.equals("return")) {
-                System.out.println("KEYWORD: " + token);
+                //System.out.println("KEYWORD: " + token);
                 output("KEYWORD: " + token);
                 
             }
             else if(token.equals("void")) {
-                System.out.println("KEYWORD: " + token);
+                //System.out.println("KEYWORD: " + token);
                 output("KEYWORD: " + token);
             }
             else if(token.equals("while")) {
-                System.out.println("KEYWORD: " + token);
+                //System.out.println("KEYWORD: " + token);
                 output("KEYWORD: " + token);
             }
             else if(lineDepth == 0 && blockDepth == 0)   {
-                System.out.println("ID: " + token + "   SCOPE: " + currentScope);
+                //System.out.println("ID: " + token + "   SCOPE: " + currentScope);
                 output("ID: " + token);
             }
         }
         if(token.matches("[0-9Ee.]+"))  {
             if(token.contains("E") || token.contains(".")) {
-                System.out.println("NUM FLOAT: " + token);
+                //System.out.println("NUM FLOAT: " + token);
                 output("NUM FLOAT: " + token);
             }
             else if(token.contains("e"))    {
-                System.out.println("ERROR: " + token);
+                //System.out.println("ERROR: " + token);
                 //output(token);
             }
             else    {
-                System.out.println("NUM INT: " + token);
+                //System.out.println("NUM INT: " + token);
                 output("NUM INT: " + token);
             }
         }  
         if(token.matches("[0-9]") && token.matches("[a-z]"))  {
-            System.out.println("ERROR: " + token);
+            //System.out.println("ERROR: " + token);
         }
         if(token.matches("[+-]+"))  {
-            System.out.println(token);
+            //System.out.println(token);
             output(token);
         }
         if(token.matches("[=]+"))  {
-            System.out.println(token);
+            //System.out.println(token);
             output(token);
         }
         if(token.matches("[()]+"))  {
-            System.out.println(token);
+            //System.out.println(token);
             output(token);
         }
         if(token.equals("/"))   {
-            System.out.println(token);
+            //System.out.println(token);
             output(token);
         }
         if(token.equals("*"))   {
-            System.out.println(token);
+            //System.out.println(token);
             output(token);
         }
         if(token.equals(";"))   {
-            System.out.println(token);
+            //System.out.println(token);
             output(token);
         }
         if(token.equals(","))   {
-            System.out.println(token);
+            //System.out.println(token);
             output(token);
         }
         if(token.equals("[") || token.equals("]"))  {
-            System.out.println(token);
+            //System.out.println(token);
             output(token);
         }
         if(token.equals("<") || token.equals(">"))  {
-            System.out.println(token);
+            //System.out.println(token);
             output(token);
         }
         if(token.equals("{"))   {
             currentScope += 1;
-            System.out.println(token);
+            //System.out.println(token);
             output(token);
         }
         if(token.equals("}"))   {
             currentScope -= 1;
-            System.out.println(token);
+            //System.out.println(token);
             output(token);
         }
     }
@@ -893,7 +889,7 @@ public class Project2compilers {
                     blockDepth++;
                     String s = new String(chars, x, 2);
                     currentScope = readToken(scope, s);
-                    //System.out.println(s + " " + blockDepth);
+                    ////System.out.println(s + " " + blockDepth);
                     x+=2;
                     //continue;
                 }
@@ -916,7 +912,7 @@ public class Project2compilers {
                     scope = currentScope;
                     
                     String s = new String(chars, x, 1);
-                    System.out.println(s);
+                    //System.out.println(s);
                     output(s);
                     //currentScope = readToken(scope, s);
                     x+=1;
@@ -932,7 +928,7 @@ public class Project2compilers {
                     scope = currentScope;
                     
                     String s = new String(chars, x, 2);
-                    System.out.println(s);
+                    //System.out.println(s);
                     output(s);
                     //currentScope = readToken(scope, s);
                     x+=2;
@@ -940,7 +936,7 @@ public class Project2compilers {
                 }
                 /* CAUSING ISSUES
                 else    {
-                    System.out.println(ca);
+                    //System.out.println(ca);
                     output(ca.toString());
                     tokenLength = 0;
                     x+=1;
@@ -949,12 +945,12 @@ public class Project2compilers {
             }
             if(ca == '!')  {
                 if(chars[x+1] == ' ')   {
-                    System.out.println("ERROR: " + ca);
+                    //System.out.println("ERROR: " + ca);
                     x++;
                 }
                 else if(chars[x+1] == '=')  {
                     String s = new String(chars, x, 2);
-                    System.out.println(s);
+                    //System.out.println(s);
                     output(s);
                     //currentScope = readToken(scope, s);
                     x+=2;
@@ -964,7 +960,7 @@ public class Project2compilers {
             if(ca == '>' || ca == '<')  {
                 if(chars[x+1] == '=')  {
                     String s = new String(chars, x, 2);
-                    System.out.println(s);
+                    //System.out.println(s);
                     output(s);
                     //currentScope = readToken(scope, s);
                     x+=2;
@@ -972,7 +968,7 @@ public class Project2compilers {
                 }
                 /* CAUSED ISSUES
                 else    {
-                    System.out.println(ca);
+                    //System.out.println(ca);
                     output(ca.toString());
                     tokenLength = 0;
                     x+=1;
@@ -982,7 +978,7 @@ public class Project2compilers {
             if(ca == '=')  {
                 if(chars[x+1] == '=')  {
                     String s = new String(chars, x, 2);
-                    System.out.println(s);
+                    //System.out.println(s);
                     output(s);
                     //currentScope = readToken(scope, s);
                     x+=2;
@@ -995,21 +991,21 @@ public class Project2compilers {
                     if(blockDepth == 0) {
                         String s1 = new String(chars, x, 1);
                         String s2 = new String(chars, (x+1), 1);
-                        System.out.println(s1);
-                        System.out.println(s2);
+                        //System.out.println(s1);
+                        //System.out.println(s2);
                         output(s1);
                         output(s2);
                         x+=2;
                         tokenLength = 0;
                     }
                     else    {   //its a block comment end
-                        //System.out.println("end block");
+                        ////System.out.println("end block");
                         blockDepth--;
                         lineDepth = 0;
                         if(blockDepth == 0) {
                             String s = new String(chars, x, 2);
                             currentScope = readToken(scope, s);
-                            //System.out.println(s + " " + blockDepth);
+                            ////System.out.println(s + " " + blockDepth);
                             x+=2;
                             tokenLength = 0;
                             continue;
@@ -1018,7 +1014,7 @@ public class Project2compilers {
                 }
                 else if(chars[x+1] == '=' && blockDepth == 0)  {
                     String s = new String(chars, x, 2);
-                    System.out.println(s);
+                    //System.out.println(s);
                     output(s);
                     //currentScope = readToken(scope, s);
                     x+=2;
@@ -1050,7 +1046,7 @@ public class Project2compilers {
                         String s4 = new String(chars, startIndex, tokenLength);
                         currentScope = readToken(scope, s4);
                         scope = currentScope;
-                        //System.out.println(s2);
+                        ////System.out.println(s2);
                         String s5 = Character.toString(chars[x]);
                         currentScope = readToken(scope, s5);
                         scope = currentScope;
