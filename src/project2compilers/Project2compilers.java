@@ -147,7 +147,6 @@ public class Project2compilers {
     }
     public static void accept() {
         System.out.println("Detected $, finished parsing.");
-        return;
     }
     //----------------------------------------------------------------
     public static void program(String token)    {
@@ -309,7 +308,6 @@ public class Project2compilers {
             statementlist2(tokens[j]);
             if(tokens[j].equals("}")) {
                 j++;
-                return;
             }
             else rejected();
         }
@@ -542,7 +540,6 @@ public class Project2compilers {
             || token.equals(">=") || token.equals("==") || token.equals("!=")) {
             
             j++;
-            return;
         }
         else rejected();
     }
@@ -855,6 +852,10 @@ public class Project2compilers {
             System.out.println(token);
             output(token);
         }
+        if(token.equals("<") || token.equals(">"))  {
+            System.out.println(token);
+            output(token);
+        }
         if(token.equals("{"))   {
             currentScope += 1;
             System.out.println(token);
@@ -934,12 +935,14 @@ public class Project2compilers {
                     x+=2;
                     tokenLength = 0;
                 }
+                /* CAUSING ISSUES
                 else    {
                     System.out.println(ca);
                     output(ca.toString());
                     tokenLength = 0;
                     x+=1;
                 }
+                */
             }
             if(ca == '!')  {
                 if(chars[x+1] == ' ')   {
@@ -964,12 +967,14 @@ public class Project2compilers {
                     x+=2;
                     tokenLength = 0;
                 }
+                /* CAUSING ISSUES
                 else    {
                     System.out.println(ca);
                     output(ca.toString());
                     tokenLength = 0;
                     x+=1;
                 }
+                */
             }
             if(ca == '=')  {
                 if(chars[x+1] == '=')  {
