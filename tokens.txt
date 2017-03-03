@@ -1,0 +1,110 @@
+KEYWORD: int
+ID: minloc
+(
+KEYWORD: int
+ID: a
+[
+]
+,
+KEYWORD: int
+ID: low
+,
+KEYWORD: int
+ID: high
+)
+{
+KEYWORD: float
+ID: i
+;
+KEYWORD: int
+ID: x
+;
+KEYWORD: int
+ID: k
+;
+ID: k
+=
+ID: low
+;
+ID: i
+=
+ID: low
++
+NUM INT: 1
+;
+KEYWORD: while
+(
+ID: i
+<
+ID: high
+)
+{
+KEYWORD: if
+(
+ID: a
+[
+ID: i
+]
+<
+ID: x
+)
+{
+ID: x
+=
+ID: a
+[
+ID: i
+]
+;
+ID: k
+=
+ID: i
+;
+}
+ID: i
+=
+ID: i
++
+NUM INT: 1
+;
+}
+KEYWORD: return
+ID: k
+;
+}
+KEYWORD: void
+ID: main
+(
+KEYWORD: void
+)
+{
+KEYWORD: int
+ID: x
+;
+KEYWORD: int
+ID: y
+;
+ID: x
+=
+ID: input
+(
+)
+;
+ID: y
+=
+ID: input
+(
+)
+;
+ID: output
+(
+ID: gcd
+(
+ID: x
+,
+ID: y
+)
+)
+;
+}
+$

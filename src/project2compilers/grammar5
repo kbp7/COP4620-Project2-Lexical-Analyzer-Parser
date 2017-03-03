@@ -1,0 +1,37 @@
+// finalized grammar
+
+program -> type-spec ID VF declaration-list'
+declaration-list' -> type-spec ID VF declaration-list' | empty 
+VF -> A | AX    //good
+var-declaration -> type-spec ID A   
+A -> ; | [ NUM ] ;  //good
+type-spec -> int | float | void     
+AX -> ( params ) compound-stmt      //good
+params -> int ID B param-list' | float ID B param-list' | void
+param-list' -> , type-spec ID B param-list' | empty
+B -> [ ] | empty
+compound-stmt -> { local-declarations' statement-list' }
+local-declarations' -> var-declaration local-declarations' | empty
+statement-list' -> statement statement-list' | empty
+statement -> D | compound-stmt | selection-stmt | iteration-stmt | return-stmt
+selection-stmt -> if ( expression ) statement C
+C -> else statement | empty
+iteration-stmt -> while ( expression ) statement
+return-stmt -> return D
+D -> expression ; | ;
+expression -> ID EV2 | ( expression ) term' additive-expression' F |
+              NUM term' additive-expression F
+EV -> = expression | term' additive-expression' F
+EV2 -> E EV | ( args ) term' additive-expression' F
+E -> [ expression] | empty
+F -> relop term additive-expression' | empty
+relop -> <= | < | > | >= | == | !=
+additive-expression' -> addop factor term' additive-expression' | empty
+addop -> + | - 
+term' -> mulop factor term' | empty 
+mulop -> * | /
+args -> arg-list | empty
+arg-list -> expression arg-list'
+arg-list' -> , expression arg-list' | empty
+
+// all rules used, 32 total.

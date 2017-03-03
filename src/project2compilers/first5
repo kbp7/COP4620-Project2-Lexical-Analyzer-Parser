@@ -1,0 +1,34 @@
+// First sets for LL(1) grammar
+
+program = INT FLOAT VOID
+declaration-list' = INT FLOAT VOID EMPTY
+VF = ; [ (
+var-declaration = INT FLOAT VOID
+A = ; [
+type-spec = INT FLOAT VOID
+AX = (
+params = INT FLOAT VOID
+param-list' = , EMPTY
+B = [ EMPTY
+compound-stmt = {
+local-declarations' = INT FLOAT VOID EMPTY
+statement-list' = ID ( NUM { IF WHILE RETURN EMPTY
+statement = ID ( NUM { IF WHILE RETURN EMPTY
+selection-stmt = IF
+C = ELSE EMPTY
+iteration-stmt = WHILE
+return-stmt = RETURN
+D = ID ( NUM ;
+expression = ID ( NUM
+EV = ID ( NUM * / + - <= < > >= == != empty
+EV2 = [ ID ( NUM * / + - <= < > >= == != empty
+E = [ EMPTY 
+F = <= < > >= == != EMPTY
+relop = <= < > >= == !=
+additive-expression' = + - empty
+addop = + -
+term' = * / EMPTY
+mulop = * /
+args = ID ( NUM EMPTY
+arg-list = ID ( NUM
+arg-list' = , EMPTY
