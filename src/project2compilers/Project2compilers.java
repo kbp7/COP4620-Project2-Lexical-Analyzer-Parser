@@ -551,6 +551,7 @@ public class Project2compilers {
         if(isAddop(token))  {
             addop(token);
             factor(tokens[j]);
+            term2(tokens[j]);
             additiveexpression2(tokens[j]);
         } // or empty
     }//-------------------------------------------------------------------------
@@ -803,8 +804,8 @@ public class Project2compilers {
                 output("ID: " + token);
             }
         }
-        if(token.matches("[0-9Ee.\\-]+"))  {
-            if(token.contains("E") || token.contains(".") || token.contains("-")) {
+        if(token.matches("[0-9Ee.]+"))  {
+            if(token.contains("E") || token.contains(".")) {
                 System.out.println("NUM FLOAT: " + token);
                 output("NUM FLOAT: " + token);
             }
@@ -868,7 +869,7 @@ public class Project2compilers {
         }
     }
         return currentScope;
-    }//-------------------------------------------------------------------
+    }//-------------------------------------------------------------------------
 
     public static void readChar(String line) throws IOException   {
         char[] chars = line.toCharArray();
@@ -906,6 +907,7 @@ public class Project2compilers {
                 }
             }
             if(blockDepth == 0 && lineDepth == 0)   {
+                /*
             if(ca == ',')   {
                 if(chars[x+1] != ' ')   {
                     int startIndex = x - tokenLength;
@@ -921,6 +923,7 @@ public class Project2compilers {
                     tokenLength = 0;
                 }
             }    
+                */
             if(ca == '+' || ca == '-')  {
                 if(chars[x+1] == '=')   {
                     int startIndex = x - tokenLength;
@@ -967,7 +970,7 @@ public class Project2compilers {
                     x+=2;
                     tokenLength = 0;
                 }
-                /* CAUSING ISSUES
+                /* CAUSED ISSUES
                 else    {
                     System.out.println(ca);
                     output(ca.toString());
