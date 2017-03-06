@@ -953,6 +953,12 @@ public class Project2compilers {
                     x++;
                 }
                 else if(chars[x+1] == '=')  {
+                    //new code *************************************************
+                    int startIndex = x - tokenLength;
+                    String s4 = new String(chars, startIndex, tokenLength);
+                    currentScope = readToken(scope, s4);
+                    scope = currentScope;
+                    // *********************************************************
                     String s = new String(chars, x, 2);
                     System.out.println(s);
                     output(s);
@@ -961,8 +967,15 @@ public class Project2compilers {
                     tokenLength = 0;
                 }
             }
+            
             if(ca == '>' || ca == '<')  {
                 if(chars[x+1] == '=')  {
+                    //new code *************************************************
+                    int startIndex = x - tokenLength;
+                    String s4 = new String(chars, startIndex, tokenLength);
+                    currentScope = readToken(scope, s4);
+                    scope = currentScope;
+                    // *********************************************************
                     String s = new String(chars, x, 2);
                     System.out.println(s);
                     output(s);
@@ -970,17 +983,17 @@ public class Project2compilers {
                     x+=2;
                     tokenLength = 0;
                 }
-                /* CAUSED ISSUES
-                else    {
-                    System.out.println(ca);
-                    output(ca.toString());
-                    tokenLength = 0;
-                    x+=1;
-                }
-                */
+                
             }
+            
             if(ca == '=')  {
                 if(chars[x+1] == '=')  {
+                    //new code *************************************************
+                    int startIndex = x - tokenLength;
+                    String s4 = new String(chars, startIndex, tokenLength);
+                    currentScope = readToken(scope, s4);
+                    scope = currentScope;
+                    // *********************************************************
                     String s = new String(chars, x, 2);
                     System.out.println(s);
                     output(s);
@@ -1038,7 +1051,7 @@ public class Project2compilers {
                     tokenLength = 0;
                 }
                 else    {
-                    if(tokenLength == 0)  { //non alphanumerica character
+                    if(tokenLength == 0)  { //non alphanumeric character
                         String s3 = Character.toString(chars[x]);
                         currentScope = readToken(scope, s3);
                         scope = currentScope;
@@ -1050,8 +1063,9 @@ public class Project2compilers {
                         String s4 = new String(chars, startIndex, tokenLength);
                         currentScope = readToken(scope, s4);
                         scope = currentScope;
-                        //System.out.println(s2);
+                        System.out.println("Testing tokens: " + s4); //testing
                         String s5 = Character.toString(chars[x]);
+                        System.out.println("Testing tokens: " +s5); //testing
                         currentScope = readToken(scope, s5);
                         scope = currentScope;
                         tokenLength = 0;
