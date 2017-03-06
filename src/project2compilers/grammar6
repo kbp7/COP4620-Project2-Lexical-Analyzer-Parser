@@ -20,8 +20,8 @@ return-stmt -> return D
 D -> expression ; | ;
 expression -> ID EV | ( expression ) term' additive-expression' F | 
               NUM term' additive-expression' F
-EV -> E EV2 | (args) term' additive-expression' F | empty?
-EV2 -> = expression | term' additive-expression' F  empty?
+EV -> E EV2 | (args) term' additive-expression' F | empty
+EV2 -> = expression | term' additive-expression' F | empty
 E -> [ expression] | empty
 
 F -> relop factor term' additive-expression' | empty
@@ -36,7 +36,7 @@ args -> arg-list | empty
 arg-list -> expression arg-list'
 arg-list' -> , expression arg-list' | empty
 
-//---------------------------------------------------------------------
+//old stuff ---------------------------------------------------------------------
 expression -> var = expression | simple-expression
 var -> ID | ID [ expression ]
 var = ID X
