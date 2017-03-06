@@ -949,6 +949,12 @@ public class Project2compilers {
                     x++;
                 }
                 else if(chars[x+1] == '=')  {
+                    //new code *************************************************
+                    int startIndex = x - tokenLength;
+                    String s4 = new String(chars, startIndex, tokenLength);
+                    currentScope = readToken(scope, s4);
+                    scope = currentScope;
+                    // *********************************************************
                     String s = new String(chars, x, 2);
                     //System.out.println(s);
                     output(s);
@@ -959,6 +965,12 @@ public class Project2compilers {
             }
             if(ca == '>' || ca == '<')  {
                 if(chars[x+1] == '=')  {
+                    //new code *************************************************
+                    int startIndex = x - tokenLength;
+                    String s4 = new String(chars, startIndex, tokenLength);
+                    currentScope = readToken(scope, s4);
+                    scope = currentScope;
+                    // *********************************************************
                     String s = new String(chars, x, 2);
                     //System.out.println(s);
                     output(s);
@@ -977,6 +989,12 @@ public class Project2compilers {
             }
             if(ca == '=')  {
                 if(chars[x+1] == '=')  {
+                    //new code *************************************************
+                    int startIndex = x - tokenLength;
+                    String s4 = new String(chars, startIndex, tokenLength);
+                    currentScope = readToken(scope, s4);
+                    scope = currentScope;
+                    // *********************************************************
                     String s = new String(chars, x, 2);
                     //System.out.println(s);
                     output(s);
