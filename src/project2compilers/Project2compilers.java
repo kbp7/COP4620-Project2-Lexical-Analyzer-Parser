@@ -1038,7 +1038,8 @@ public class Project2compilers {
                     tokenLength = 0;
                 }
             }
-            if(Character.isDigit(ca) || Character.isLetter(ca) || ca.equals('.'))   {
+            ca = chars[x]; //******************* NEW CODE **********************
+            if(Character.isDigit(chars[x]) || Character.isLetter(chars[x]) || ca.equals('.'))   {
                 tokenLength++;
             }
            
