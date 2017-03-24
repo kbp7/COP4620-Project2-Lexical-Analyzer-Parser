@@ -13,14 +13,37 @@ import java.net.URL;
 import java.util.regex.*;
 
 class DataItem {                                
-    private int val;               //value
-    private String identifier;
-    
+    private int val = 0;            
+    private int params = 0;
+    private int scope = 0;
+    private int arrayLength = 0;
+    private String identifier = null;
+    private String type = null;
+    private boolean isFunc = false;
+    private boolean isVar = false;
+    private boolean declared = false;
+    private boolean isMain = false;
     
 //--------------------------------------------------------------
-    public DataItem(String token, int hashval)   { //for symbol table
-        //tk = token;
-        val = hashval;
+    public DataItem(String token, int currentScope)   { //for symbol table
+        identifier = token;
+        val = currentScope;
+    }
+//--------------------------------------------------------------
+    public void declareVar(String typespec, int arrayL)  {
+        isVar = true;
+        type = typespec;
+        declared = true;
+        arrayLength = arrayL; 
+    }
+//--------------------------------------------------------------
+    public void declareFunc(String typespec, int arrayL, boolean theMain,
+                            int numParams)  {
+        isFunc = true;
+        type = typespec;
+        declared = true;
+        isMain = theMain;
+        params = numParams; //number of params
     }
 //--------------------------------------------------------------
     public int getVal() { 
@@ -30,11 +53,37 @@ class DataItem {
     public String getID()   {
         return identifier;
     }
+//--------------------------------------------------------------
+    public void getVariable(int index)   {
+        System.out.printf("[%03d] Variable | %-16s | %-16s | ", 
+                          index, type, identifier);
+        if(arrayLength > 0)
+            System.out.printf("Array length: %d\n", arrayLength);
+        else {
+            System.out.println();
+        }
+        //return (type + " | " + identifier + " | " + arrayLength);
+    }
+ //--------------------------------------------------------------
+    public void setID(String id)   {
+        identifier = id;
+    }
+    public void setDeclared()   {
+        declared = true;
+    }
+    public void setType(String itemType)   {
+        type = itemType;
+    }
+    public void setMain()   {
+        isMain = true;
+    }
+   
 }//end dataItem
 class HashTable
     {
     private final DataItem[] hashArray;    // array holds hash table
     private final int arraySize;
+    private boolean hasMain;
 // -------------------------------------------------------------
     public HashTable(int size)       // constructor
         {
@@ -65,7 +114,88 @@ class HashTable
 
         return(int)(Math.abs(sum) % arraySize);
         }
+       
+// -------------------------------------------------------------
+    public void insert(DataItem item) // insert a DataItem
+    // (assumes table not full)
+        {
+        String key = item.getID();      // extract key
+        System.out.println("test insert: " + key);
+        int hashVal = hashFunc(key);  // hash the key         
         
+        int j = 0; //for quad probe
+        while(hashArray[hashVal] != null) {
+            
+            //System.out.println("COLLISION: Index " + hashVal + " contains "
+                                //+ hashArray[hashVal].getKey()); //collisions
+            if(hashArray[hashVal].getID().equals(key))  {
+                System.out.println("Error: [" + key + "] already declared");
+                item.setDeclared();
+                Project2compilers.rejected();
+                break;
+            }
+            else    {
+                ++j;
+                hashVal = (hashVal + j * j);  //quadratic probing
+                hashVal %= arraySize;         // wraparound
+            }
+        }
+        if (hashArray[hashVal] == null) {
+            if(key.contains("main") && !hasMain)    {
+                hasMain = true;
+                hashArray[hashVal] = item;    // insert item
+            }
+            else if(key.contains("main") && hasMain)    {
+                System.out.println("ERROR: main method already exists");
+                Project2compilers.rejected();
+            }
+            else
+                hashArray[hashVal] = item;    // insert item
+            //System.out.println("Stored " + key + " at index " + hashVal + " value: " + value);
+        }
+        
+    }
+      // end insert()
+
+// -------------------------------------------------------------
+    public int find(int hashVal, String key)    // find item with key
+        {
+        int j = 0;
+        int cellsCheck = 0;
+        while((hashArray[hashVal] != null) && (cellsCheck<arraySize))  // until empty cell,
+            {                               // found the key?
+            //System.out.println(hashArray[hashVal].getKey());
+            if(hashArray[hashVal].getID().equals(key)) {
+                /*
+                System.out.println(key + " found at index " + hashVal
+                + " value: " + hashArray[hashVal].getBytes());
+                */
+                return hashVal;   // yes, return item
+                }
+            ++j;
+            hashVal = (hashVal + j * j);                 // go to next cell
+            hashVal %= arraySize;      // wraparound if necessary
+            cellsCheck++;
+        }
+        //System.out.println("index "+hashVal+" contains "+ hashArray[hashVal]);
+        return -1;                  // can't find item
+    }   
+// -------------------------------------------------------------
+    public void displayTable() //SICOPS TABLE
+        {
+        System.out.println("================== Symbol Table ====================");
+        for(int j=0; j<arraySize; j++)
+            {
+            if(hashArray[j] != null)
+                /*
+                System.out.println("[" + j + "]" + hashArray[j].getID()
+				   + " [Scope: " + hashArray[j].getVal() + "]");
+            */
+                hashArray[j].getVariable(j);
+                }
+        System.out.println();
+    }
+// -------------------------------------------------------------
 }  // end class HashTable
 
 ////////////////////////////////////////////////////////////////
@@ -81,6 +211,8 @@ public class Project2compilers {
     public static BufferedWriter bw;
     public static String[] tokens;
     public static int j;
+    public static HashTable table;
+    public static boolean hasMain = false;
     
     
     public static void main(String[] args)  throws IOException  {
@@ -91,8 +223,6 @@ public class Project2compilers {
         FileOutputStream fos = new FileOutputStream(out);
         bw = new BufferedWriter(new OutputStreamWriter(fos));
         String[] input;
-        //int size = 100;
-        //HashTable theHashTable = new HashTable(size); //symbol table
        
         // read input and write tokens to file
         BufferedReader buff = new BufferedReader(new FileReader(file));
@@ -118,9 +248,13 @@ public class Project2compilers {
         bw.close(); //finish writing tokens to file
         parser(out);
         
+        //----------------------- Semantics ------------------------------------
+        table.displayTable();
+        
     }//end main    
 //--------------------------------------------------------------------
     public static void parser(File out) throws IOException {
+        table = new HashTable(100); //symbol table
         BufferedReader br = new BufferedReader(new FileReader(out));
         String line;
         tokens = new String[500];
@@ -129,27 +263,23 @@ public class Project2compilers {
         }
 
         j = 0;
+        currentScope = 0;
         program(tokens[j]);
         System.out.println("-----------------------------------------------------------");
         System.out.println("ACCEPT");
-        /*
-        while(tokens[j] != null)    {
-            declarationlist(tokens[j]);
-            j++;
-        }
-        */
-    }//---------------------------------------------------------------
-
+        
+    }//-------------------------------------------------------------------------
     public static void rejected()   {
-        System.out.println("ERROR: " + tokens[j]);
+        //System.out.println("ERROR: " + tokens[j]);
         System.out.println("REJECT");
         System.exit(0);
     }
+    //--------------------------------------------------------------------------
     public static void accept() {
         System.out.println("Detected $, finished parsing.");
     }
-    //----------------------------------------------------------------
-    public static void program(String token)    {
+    //--------------------------------------------------------------------------
+    public static void program(String token)    {   //good
         System.out.println("invoked program");
         System.out.println(token);
         if(isTypeSpec(token))   {
@@ -180,8 +310,8 @@ public class Project2compilers {
             accept();
         }
         
-    }//--------------------------------------------------------------------
-    public static void VF(String token) {
+    }//-------------------------------------------------------------------------
+    public static void VF(String token) { // Variable or Function
         System.out.println("invoked VF");
         System.out.println(token);
         // first of A
@@ -194,6 +324,7 @@ public class Project2compilers {
         else rejected();
     }//-------------------------------------------------------------------------
     public static void vardeclaration(String token)    {
+        //all variables must be declared once
         System.out.println("invoked vardeclaration");
         System.out.println(token);
         
@@ -206,21 +337,42 @@ public class Project2compilers {
             else rejected();
         }
         else rejected();
-    }//----------------------------------------------------------------------------
-    public static void A(String token)  {
+    }//-------------------------------------------------------------------------
+    public static void A(String token)  { 
         System.out.println("invoked A");
         System.out.println(token);
         //A -> ; | [NUM]
         if(token.equals(";"))  {
+            //variable declaration
+            String varID = (tokens[j-1]);
+            String varType = (tokens[j-2]);
+            DataItem item = new DataItem(varID, currentScope);
+            //variable is not an array
+            item.declareVar(varType, 0);
+            table.insert(item);
             j++;
         }
         else if(token.equals("["))  {
+            //array declaration
             j++;
-            if(tokens[j].contains("NUM")) {
+            if (tokens[j].contains("NUM FLOAT:"))  {
+                    //SEMANTICS: FLOAT cannot be an index for an array
+                    System.out.println("Semantic error: FLOAT index");
+                    rejected();
+                }
+            else if(tokens[j].contains("NUM INT:")) {
                 j++;
                 if(tokens[j].equals("]")) {
                     j++;
                     if(tokens[j].equals(";"))   {
+                        int numparam = Integer.parseInt
+                                       (tokens[j-2].replaceAll("[^0-9]", ""));
+                        String varID = (tokens[j-4]);
+                        String varType = (tokens[j-5]);
+                        DataItem item = new DataItem(varID, currentScope);
+                        //variable is an array
+                        item.declareVar(varType, numparam);
+                        table.insert(item);
                         j++;
                     }
                     else rejected();
@@ -231,7 +383,7 @@ public class Project2compilers {
         }
         else rejected();
     }//-------------------------------------------------------------------------
-    public static void AX(String token) {
+    public static void AX(String token) { //function declaration
         System.out.println("invoked AX");
         System.out.println(token);
         if(token.equals("("))   {
@@ -764,6 +916,8 @@ public class Project2compilers {
     }//--------------------------------------------------------------------
     
     public static int readToken(int currentScope, String token) throws IOException   {
+    int hashval = 0;
+    
     if(blockDepth == 0 && lineDepth == 0)  {    
         if(token.matches("[a-zA-Z]+"))  {
             if(token.equals("else"))    {
@@ -802,6 +956,10 @@ public class Project2compilers {
             else if(lineDepth == 0 && blockDepth == 0)   {
                 System.out.println("ID: " + token + "   SCOPE: " + currentScope);
                 output("ID: " + token);
+                /*
+                DataItem item = new DataItem(token, currentScope);
+                table.insert(item);
+                */
             }
         }
         if(token.matches("[0-9Ee.]+"))  {
@@ -907,23 +1065,7 @@ public class Project2compilers {
                 }
             }
             if(blockDepth == 0 && lineDepth == 0)   {
-                /*
-            if(ca == ',')   {
-                if(chars[x+1] != ' ')   {
-                    int startIndex = x - tokenLength;
-                    String s4 = new String(chars, startIndex, tokenLength);
-                    currentScope = readToken(scope, s4);
-                    scope = currentScope;
-                    
-                    String s = new String(chars, x, 1);
-                    System.out.println(s);
-                    output(s);
-                    //currentScope = readToken(scope, s);
-                    x+=1;
-                    tokenLength = 0;
-                }
-            }    
-                */
+               
             if(ca == '+' || ca == '-')  {
                 if(chars[x+1] == '=')   {
                     int startIndex = x - tokenLength;
@@ -938,14 +1080,7 @@ public class Project2compilers {
                     x+=2;
                     tokenLength = 0;
                 }
-                /* CAUSING ISSUES
-                else    {
-                    System.out.println(ca);
-                    output(ca.toString());
-                    tokenLength = 0;
-                    x+=1;
-                }
-                */
+                
             }
             if(ca == '!')  {
                 if(chars[x+1] == ' ')   {
@@ -953,12 +1088,10 @@ public class Project2compilers {
                     x++;
                 }
                 else if(chars[x+1] == '=')  {
-                    //new code *************************************************
                     int startIndex = x - tokenLength;
                     String s4 = new String(chars, startIndex, tokenLength);
                     currentScope = readToken(scope, s4);
                     scope = currentScope;
-                    // *********************************************************
                     String s = new String(chars, x, 2);
                     System.out.println(s);
                     output(s);
@@ -970,12 +1103,10 @@ public class Project2compilers {
             
             if(ca == '>' || ca == '<')  {
                 if(chars[x+1] == '=')  {
-                    //new code *************************************************
                     int startIndex = x - tokenLength;
                     String s4 = new String(chars, startIndex, tokenLength);
                     currentScope = readToken(scope, s4);
                     scope = currentScope;
-                    // *********************************************************
                     String s = new String(chars, x, 2);
                     System.out.println(s);
                     output(s);
@@ -988,12 +1119,10 @@ public class Project2compilers {
             
             if(ca == '=')  {
                 if(chars[x+1] == '=')  {
-                    //new code *************************************************
                     int startIndex = x - tokenLength;
                     String s4 = new String(chars, startIndex, tokenLength);
                     currentScope = readToken(scope, s4);
                     scope = currentScope;
-                    // *********************************************************
                     String s = new String(chars, x, 2);
                     System.out.println(s);
                     output(s);
@@ -1038,7 +1167,7 @@ public class Project2compilers {
                     tokenLength = 0;
                 }
             }
-            ca = chars[x]; //******************* NEW CODE **********************
+            ca = chars[x]; 
             if(Character.isDigit(chars[x]) || Character.isLetter(chars[x]) || ca.equals('.'))   {
                 tokenLength++;
             }
