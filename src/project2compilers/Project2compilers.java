@@ -1,7 +1,6 @@
 /*
 Kevin Poon
 n00900355
-Project 1: Lexical Analyzer
  */
 package project2compilers;
 
@@ -14,7 +13,6 @@ import java.util.regex.*;
 
 class DataItem {                                
     private int val = 0;            
-    private int params = 0;
     private int scope = 0;
     private int arrayLength = 0;
     private String identifier = null;
@@ -23,6 +21,7 @@ class DataItem {
     private boolean isVar = false;
     private boolean declared = false;
     private boolean isMain = false;
+    private List<DataItem> paramslist = null;
     
 //--------------------------------------------------------------
     public DataItem(String token, int currentScope)   { //for symbol table
@@ -37,13 +36,16 @@ class DataItem {
         arrayLength = arrayL; 
     }
 //--------------------------------------------------------------
-    public void declareFunc(String typespec, int arrayL, boolean theMain,
-                            int numParams)  {
+    public void declareFunc(String typespec, int arrayL, boolean theMain)  {
         isFunc = true;
         type = typespec;
+        arrayLength = arrayL;
         declared = true;
         isMain = theMain;
-        params = numParams; //number of params
+    }
+//--------------------------------------------------------------
+    public void addFuncParams(DataItem item) {
+        paramslist.add(item);
     }
 //--------------------------------------------------------------
     public int getVal() { 
@@ -55,8 +57,15 @@ class DataItem {
     }
 //--------------------------------------------------------------
     public void getVariable(int index)   {
-        System.out.printf("[%03d] Variable | %-16s | %-16s | ", 
-                          index, type, identifier);
+        String declaration = null;
+        if(isFunc)  {
+            declaration = "Function";
+        }
+        else if(isVar)  {
+            declaration = "Variable";
+        }
+        System.out.printf("[%03d] %8s | %-16s | %-16s | ", 
+                          index, declaration, type, identifier);
         if(arrayLength > 0)
             System.out.printf("Array length: %d\n", arrayLength);
         else {
@@ -83,7 +92,7 @@ class HashTable
     {
     private final DataItem[] hashArray;    // array holds hash table
     private final int arraySize;
-    private boolean hasMain;
+    private int mainCount;
 // -------------------------------------------------------------
     public HashTable(int size)       // constructor
         {
@@ -125,27 +134,25 @@ class HashTable
         
         int j = 0; //for quad probe
         while(hashArray[hashVal] != null) {
-            
-            //System.out.println("COLLISION: Index " + hashVal + " contains "
-                                //+ hashArray[hashVal].getKey()); //collisions
+            /*
             if(hashArray[hashVal].getID().equals(key))  {
                 System.out.println("Error: [" + key + "] already declared");
                 item.setDeclared();
                 Project2compilers.rejected();
                 break;
             }
-            else    {
-                ++j;
-                hashVal = (hashVal + j * j);  //quadratic probing
-                hashVal %= arraySize;         // wraparound
-            }
+            */
+            ++j;
+            hashVal = (hashVal + j * j);  //quadratic probing
+            hashVal %= arraySize;         // wraparound
         }
         if (hashArray[hashVal] == null) {
-            if(key.contains("main") && !hasMain)    {
-                hasMain = true;
+            if(key.contains("main") && mainCount<1)    {
+                mainCount += 1;
+                Project2compilers.hasMain = true;
                 hashArray[hashVal] = item;    // insert item
             }
-            else if(key.contains("main") && hasMain)    {
+            else if(key.contains("main") && mainCount>0)    {
                 System.out.println("ERROR: main method already exists");
                 Project2compilers.rejected();
             }
@@ -208,12 +215,11 @@ public class Project2compilers {
     public static int tokenLength;
     public static int blockDepth;   //depth of block comments
     public static int lineDepth;    //depth of line comments
+    public static boolean hasMain = false;
     public static BufferedWriter bw;
     public static String[] tokens;
     public static int j;
     public static HashTable table;
-    public static boolean hasMain = false;
-    
     
     public static void main(String[] args)  throws IOException  {
         System.out.println("Input file: " + args[0]);
@@ -265,6 +271,10 @@ public class Project2compilers {
         j = 0;
         currentScope = 0;
         program(tokens[j]);
+        if(!hasMain)    {
+            System.out.println("SEMANTIC ERROR: No main function");
+            rejected();
+        }
         System.out.println("-----------------------------------------------------------");
         System.out.println("ACCEPT");
         
@@ -306,8 +316,8 @@ public class Project2compilers {
             }
             else rejected();
         }
-        else if(token.equals("$"))  {
-            accept();
+        if(token.equals("$"))  {
+            accept();   //accepted by parser
         }
         
     }//-------------------------------------------------------------------------
@@ -346,6 +356,11 @@ public class Project2compilers {
             //variable declaration
             String varID = (tokens[j-1]);
             String varType = (tokens[j-2]);
+            //SEMANTICS: void variables ****************************************
+            if(varType.contains("void"))    {
+                System.out.println("SEMANTIC ERROR: void variable");
+                rejected();
+            }
             DataItem item = new DataItem(varID, currentScope);
             //variable is not an array
             item.declareVar(varType, 0);
@@ -356,8 +371,8 @@ public class Project2compilers {
             //array declaration
             j++;
             if (tokens[j].contains("NUM FLOAT:"))  {
-                    //SEMANTICS: FLOAT cannot be an index for an array
-                    System.out.println("Semantic error: FLOAT index");
+                    //SEMANTICS: FLOAT cannot be an index for an array *********
+                    System.out.println("SEMANTIC ERROR: FLOAT index");
                     rejected();
                 }
             else if(tokens[j].contains("NUM INT:")) {
@@ -369,6 +384,11 @@ public class Project2compilers {
                                        (tokens[j-2].replaceAll("[^0-9]", ""));
                         String varID = (tokens[j-4]);
                         String varType = (tokens[j-5]);
+                        //SEMANTICS: void variables ****************************
+                        if(varType.contains("void"))    {
+                            System.out.println("SEMANTIC ERROR: void variable");
+                            rejected();
+                        }
                         DataItem item = new DataItem(varID, currentScope);
                         //variable is an array
                         item.declareVar(varType, numparam);
@@ -386,9 +406,21 @@ public class Project2compilers {
     public static void AX(String token) { //function declaration
         System.out.println("invoked AX");
         System.out.println(token);
+        String funcID = tokens[j-1];
+        String funcType = tokens[j-2];
+        boolean checkMain = false;
+        
+        if(funcID.contains("main")) {
+            checkMain = true;
+        }
+        
         if(token.equals("("))   {
+            DataItem func = new DataItem(funcID, currentScope);
+            //function is main
+            func.declareFunc(funcType, 0, checkMain);
+            table.insert(func);
             j++;
-            params(tokens[j]);
+            params(tokens[j], func);
             if(tokens[j].equals(")")) {
                 j++;
                 compoundstmt(tokens[j]);
@@ -397,9 +429,10 @@ public class Project2compilers {
         }
         else rejected();
     }//-------------------------------------------------------------------------
-    public static void params(String token) {
+    public static void params(String token, DataItem func) {
         System.out.println("invoked params");
         System.out.println(token);
+        int countParams = 0;
         if(token.contains("KEYWORD: int"))  {
             j++;
             if(tokens[j].contains("ID: "))  {
