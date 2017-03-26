@@ -19,33 +19,42 @@ class DataItem {
     private String type = null;
     private boolean isFunc = false;
     private boolean isVar = false;
+    private boolean isArray = false;
     private boolean declared = false;
     private boolean isMain = false;
-    private List<DataItem> paramslist = null;
+    private String paramslist = "void";
     
 //--------------------------------------------------------------
-    public DataItem(String token, int currentScope)   { //for symbol table
+    public DataItem(String typespec, String token, int currentScope)   { //for symbol table
+        type = typespec;
         identifier = token;
         val = currentScope;
     }
 //--------------------------------------------------------------
     public void declareVar(String typespec, int arrayL)  {
         isVar = true;
-        type = typespec;
         declared = true;
         arrayLength = arrayL; 
     }
 //--------------------------------------------------------------
     public void declareFunc(String typespec, int arrayL, boolean theMain)  {
         isFunc = true;
-        type = typespec;
         arrayLength = arrayL;
         declared = true;
         isMain = theMain;
     }
 //--------------------------------------------------------------
-    public void addFuncParams(DataItem item) {
-        paramslist.add(item);
+    public void declareArray()  {
+        isArray = true;
+    }
+//--------------------------------------------------------------
+    public void addFuncParams(String parameter) {
+        if(paramslist.equals("none"))    {
+            paramslist = parameter;
+        }
+        else    {
+            paramslist += ", " + parameter;
+        }
     }
 //--------------------------------------------------------------
     public int getVal() { 
@@ -68,6 +77,11 @@ class DataItem {
                           index, declaration, type, identifier);
         if(arrayLength > 0)
             System.out.printf("Array length: %d\n", arrayLength);
+        else if(isFunc) {
+            System.out.printf("Params: ");
+            System.out.println(paramslist);
+           
+        }
         else {
             System.out.println();
         }
@@ -250,6 +264,11 @@ public class Project2compilers {
             }
         }
         System.out.println("Tests below ----------------------------------------");
+        String testing1 = "testing1";
+        String testing2 = "testing2";
+        String testing3 = (testing1 + " " + testing2);
+        System.out.println(testing3);
+        
         bw.write("$");
         bw.close(); //finish writing tokens to file
         parser(out);
@@ -295,8 +314,10 @@ public class Project2compilers {
         if(isTypeSpec(token))   {
             j++;
             if(tokens[j].contains("ID: "))  {
+                //item with typespec and ID
+                DataItem item = new DataItem(token, tokens[j], currentScope);
                 j++;
-                VF(tokens[j]);
+                VF(tokens[j], item);
                 declarationlist2(tokens[j]);
             }
             else rejected();
@@ -310,8 +331,10 @@ public class Project2compilers {
         if(isTypeSpec(token))   {
             j++;
             if(tokens[j].contains("ID: "))  {
+                DataItem item = new DataItem(token, tokens[j], currentScope);
+                //table.insert(item);
                 j++;
-                VF(tokens[j]);
+                VF(tokens[j], item);
                 declarationlist2(tokens[j]);
             }
             else rejected();
@@ -321,15 +344,17 @@ public class Project2compilers {
         }
         
     }//-------------------------------------------------------------------------
-    public static void VF(String token) { // Variable or Function
+    public static void VF(String token, DataItem item) { // Variable or Function
         System.out.println("invoked VF");
         System.out.println(token);
         // first of A
         if(token.equals(";") || token.equals("["))  {
-            A(token);
+            //variable
+            A(token, item);
         }
         else if(token.equals("("))  {
-            AX(token);
+            //function
+            AX(token, item);
         }
         else rejected();
     }//-------------------------------------------------------------------------
@@ -341,14 +366,15 @@ public class Project2compilers {
         if(isTypeSpec(token))   {
             j++;
             if(tokens[j].contains("ID: ")) {
+                DataItem item = new DataItem(token, tokens[j], currentScope);
                 j++;
-                A(tokens[j]);
+                A(tokens[j], item);
             }
             else rejected();
         }
         else rejected();
     }//-------------------------------------------------------------------------
-    public static void A(String token)  { 
+    public static void A(String token, DataItem item)  { 
         System.out.println("invoked A");
         System.out.println(token);
         //A -> ; | [NUM]
@@ -361,7 +387,6 @@ public class Project2compilers {
                 System.out.println("SEMANTIC ERROR: void variable");
                 rejected();
             }
-            DataItem item = new DataItem(varID, currentScope);
             //variable is not an array
             item.declareVar(varType, 0);
             table.insert(item);
@@ -380,7 +405,7 @@ public class Project2compilers {
                 if(tokens[j].equals("]")) {
                     j++;
                     if(tokens[j].equals(";"))   {
-                        int numparam = Integer.parseInt
+                        int size = Integer.parseInt
                                        (tokens[j-2].replaceAll("[^0-9]", ""));
                         String varID = (tokens[j-4]);
                         String varType = (tokens[j-5]);
@@ -389,9 +414,9 @@ public class Project2compilers {
                             System.out.println("SEMANTIC ERROR: void variable");
                             rejected();
                         }
-                        DataItem item = new DataItem(varID, currentScope);
+                        
                         //variable is an array
-                        item.declareVar(varType, numparam);
+                        item.declareVar(varType, size);
                         table.insert(item);
                         j++;
                     }
@@ -403,7 +428,7 @@ public class Project2compilers {
         }
         else rejected();
     }//-------------------------------------------------------------------------
-    public static void AX(String token) { //function declaration
+    public static void AX(String token, DataItem item) { //function declaration
         System.out.println("invoked AX");
         System.out.println(token);
         String funcID = tokens[j-1];
@@ -415,12 +440,11 @@ public class Project2compilers {
         }
         
         if(token.equals("("))   {
-            DataItem func = new DataItem(funcID, currentScope);
-            //function is main
-            func.declareFunc(funcType, 0, checkMain);
-            table.insert(func);
+            item.declareFunc(funcType, 0, checkMain);
+            //might change when to insert item into symtab
+            table.insert(item);
             j++;
-            params(tokens[j], func);
+            params(tokens[j], item);
             if(tokens[j].equals(")")) {
                 j++;
                 compoundstmt(tokens[j]);
@@ -429,16 +453,16 @@ public class Project2compilers {
         }
         else rejected();
     }//-------------------------------------------------------------------------
-    public static void params(String token, DataItem func) {
+    public static void params(String token, DataItem item) {
         System.out.println("invoked params");
         System.out.println(token);
-        int countParams = 0;
+        //parameter types
         if(token.contains("KEYWORD: int"))  {
             j++;
             if(tokens[j].contains("ID: "))  {
                 j++;
-                B(tokens[j]);
-                paramlist2(tokens[j]);
+                B(tokens[j], item);
+                paramlist2(tokens[j], item);
             }
             else rejected();
         }
@@ -446,8 +470,8 @@ public class Project2compilers {
             j++;
             if(tokens[j].contains("ID: "))  {
                 j++;
-                B(tokens[j]);
-                paramlist2(tokens[j]);
+                B(tokens[j], item);
+                paramlist2(tokens[j], item);
             }
             else rejected();
         }
@@ -456,7 +480,7 @@ public class Project2compilers {
         }
         else rejected();
     }//-------------------------------------------------------------------------
-    public static void paramlist2(String token) {
+    public static void paramlist2(String token, DataItem item) {
         System.out.println("invoked paramlist2");
         System.out.println(token);
         if(token.equals(","))   {
@@ -465,24 +489,34 @@ public class Project2compilers {
                 j++;
                 if(tokens[j].contains("ID: "))  {
                     j++;
-                    B(tokens[j]);
-                    paramlist2(tokens[j]);
+                    B(tokens[j], item);
+                    paramlist2(tokens[j], item);
                 }
                 else rejected();
             }
             else rejected();
         }// goes to empty
     }//-------------------------------------------------------------------------
-    public static void B(String token)  {
+    public static void B(String token, DataItem item)  {
         System.out.println("invoked B");
         System.out.println(token);
+        String typespec = tokens[j-2];
+        String varID = tokens[j-1];
+        String parameter;
         if(token.equals("[")) {
             j++;
             if(tokens[j].equals("]"))   {
+                //array
+                parameter = (typespec + " " + varID + "[]");
+                item.addFuncParams(parameter);
                 j++;
             }
             else rejected();
         } // or empty
+        else {
+            parameter = (typespec + " " + varID);
+            item.addFuncParams(parameter);
+        }
     }//-------------------------------------------------------------------------
     public static void compoundstmt(String token)  {
         System.out.println("invoked compound");
