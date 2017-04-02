@@ -17,10 +17,11 @@ class DataItem {
     private int arrayLength = 0;
     private String identifier = null;
     private String type = null;
+    private boolean returnStmt = false;
     private boolean isFunc = false;
     private boolean isVar = false;
     private boolean isArray = false;
-    private boolean declared = false;
+    public boolean declared = false;
     private boolean isMain = false;
     private String paramslist = "void";
     
@@ -57,8 +58,29 @@ class DataItem {
         }
     }
 //--------------------------------------------------------------
+    public void addReturn(String returnType)  {
+        System.out.println("expected type: " + type);
+        System.out.println("returnType: " + returnType);
+        if(type.contains(returnType))  {
+            returnStmt = true;
+        }
+        else    { //SEMANTICS: return type must match function type
+            System.out.println("SEMANTIC ERROR: incorrect return type");
+            Project2compilers.rejected();
+        }
+    }
+    public void checkReturn()  {
+        if(!returnStmt) {
+            System.out.println("SEMANTIC ERROR: missing return statement");
+            Project2compilers.rejected();
+        }
+    }
+//--------------------------------------------------------------
     public int getVal() { 
         return val; 
+    }
+    public String getType() {
+        return type;
     }
 //--------------------------------------------------------------
     public String getID()   {
@@ -73,8 +95,8 @@ class DataItem {
         else if(isVar)  {
             declaration = "Variable";
         }
-        System.out.printf("[%03d] %8s | %-16s | %-16s | ", 
-                          index, declaration, type, identifier);
+        System.out.printf("[%03d] [%02d] %8s | %-16s | %-16s | ", 
+                          index, val, declaration, type, identifier);
         if(arrayLength > 0)
             System.out.printf("Array length: %d\n", arrayLength);
         else if(isFunc) {
@@ -88,6 +110,9 @@ class DataItem {
         //return (type + " | " + identifier + " | " + arrayLength);
     }
  //--------------------------------------------------------------
+    public boolean getStatus() {
+        return declared;
+    }
     public void setID(String id)   {
         identifier = id;
     }
@@ -148,14 +173,7 @@ class HashTable
         
         int j = 0; //for quad probe
         while(hashArray[hashVal] != null) {
-            /*
-            if(hashArray[hashVal].getID().equals(key))  {
-                System.out.println("Error: [" + key + "] already declared");
-                item.setDeclared();
-                Project2compilers.rejected();
-                break;
-            }
-            */
+            
             ++j;
             hashVal = (hashVal + j * j);  //quadratic probing
             hashVal %= arraySize;         // wraparound
@@ -181,6 +199,7 @@ class HashTable
 // -------------------------------------------------------------
     public int find(int hashVal, String key)    // find item with key
         {
+        System.out.println("***finding variable: " + key);
         int j = 0;
         int cellsCheck = 0;
         while((hashArray[hashVal] != null) && (cellsCheck<arraySize))  // until empty cell,
@@ -200,9 +219,23 @@ class HashTable
         }
         //System.out.println("index "+hashVal+" contains "+ hashArray[hashVal]);
         return -1;                  // can't find item
-    }   
+    }  
+    public DataItem getItem(int hashVal)    {
+        return hashArray[hashVal];
+    }
 // -------------------------------------------------------------
-    public void displayTable() //SICOPS TABLE
+    public void update(int hashVal, String key, DataItem item) {
+        int index = find(hashVal, key);
+        if(!hashArray[index].declared)  {
+            hashArray[index] = item;
+        }
+        else    {
+            System.out.println("SEMANTIC ERROR: already declared");
+            Project2compilers.rejected();
+        }
+    }
+    //---------------------------------------------------------------------------
+    public void displayTable() 
         {
         System.out.println("================== Symbol Table ====================");
         for(int j=0; j<arraySize; j++)
@@ -226,10 +259,13 @@ public class Project2compilers {
     public String[] special;
     public static int scope;
     public static int currentScope;
+    public static int totalScope;
     public static int tokenLength;
     public static int blockDepth;   //depth of block comments
     public static int lineDepth;    //depth of line comments
     public static boolean hasMain = false;
+    public static boolean exp;
+    public static boolean rtrn;
     public static BufferedWriter bw;
     public static String[] tokens;
     public static int j;
@@ -253,7 +289,6 @@ public class Project2compilers {
             input[i] = line;
             if(!line.isEmpty()) {
                 System.out.println();
-                //line = line + " ";
                 System.out.println("INPUT: " + line);
                 if(line.contains("$"))  {
                     System.out.println("============= END OF FILE ==============");
@@ -264,10 +299,7 @@ public class Project2compilers {
             }
         }
         System.out.println("Tests below ----------------------------------------");
-        String testing1 = "testing1";
-        String testing2 = "testing2";
-        String testing3 = (testing1 + " " + testing2);
-        System.out.println(testing3);
+        
         
         bw.write("$");
         bw.close(); //finish writing tokens to file
@@ -289,6 +321,7 @@ public class Project2compilers {
 
         j = 0;
         currentScope = 0;
+        totalScope = 0;
         program(tokens[j]);
         if(!hasMain)    {
             System.out.println("SEMANTIC ERROR: No main function");
@@ -306,6 +339,36 @@ public class Project2compilers {
     //--------------------------------------------------------------------------
     public static void accept() {
         System.out.println("Detected $, finished parsing.");
+    }
+    //--------------------------------------------------------------------------
+    public static boolean lookup(String token)     {
+        int hashval = table.hashFunc(token);
+        boolean result = false;
+        if(table.find(hashval, token) > 0)  { //declared
+                System.out.println("*** Found ID in symtab");
+                result = true;
+            }
+            else    {
+                System.out.println("SEMANTIC ERROR: variable not declared");
+                rejected();
+            }
+        return result;
+    }
+    //--------------------------------------------------------------------------
+    public static String lookupType(String token)     {
+        int hashval = table.hashFunc(token);
+        int index = table.find(hashval, token);
+        DataItem item;
+        if(index > 0)  { //declared
+                System.out.println("*** Found ID in symtab");
+                item = table.getItem(hashval);
+                return item.getType();
+            }
+            else    {
+                System.out.println("SEMANTIC ERROR: variable not declared");
+                rejected();
+            }
+        return null;
     }
     //--------------------------------------------------------------------------
     public static void program(String token)    {   //good
@@ -389,7 +452,13 @@ public class Project2compilers {
             }
             //variable is not an array
             item.declareVar(varType, 0);
-            table.insert(item);
+            int hashval = table.hashFunc(varID);
+            if(table.find(hashval, varID) < 0)  {
+                table.insert(item);
+            }
+            else    {
+                table.update(hashval, varID, item);
+            }
             j++;
         }
         else if(token.equals("["))  {
@@ -447,7 +516,7 @@ public class Project2compilers {
             params(tokens[j], item);
             if(tokens[j].equals(")")) {
                 j++;
-                compoundstmt(tokens[j]);
+                compoundstmt(tokens[j], item);
             }
             else rejected();
         }
@@ -460,6 +529,9 @@ public class Project2compilers {
         if(token.contains("KEYWORD: int"))  {
             j++;
             if(tokens[j].contains("ID: "))  {
+                //SEMANTICS: add parameter to symbol table
+                DataItem param = new DataItem(token, tokens[j], currentScope);
+                table.insert(param);
                 j++;
                 B(tokens[j], item);
                 paramlist2(tokens[j], item);
@@ -469,6 +541,8 @@ public class Project2compilers {
         else if(token.contains("KEYWORD: float"))  {
             j++;
             if(tokens[j].contains("ID: "))  {
+                DataItem param = new DataItem(token, tokens[j], currentScope);
+                table.insert(param);
                 j++;
                 B(tokens[j], item);
                 paramlist2(tokens[j], item);
@@ -488,6 +562,8 @@ public class Project2compilers {
             if(isTypeSpec(tokens[j]))   {
                 j++;
                 if(tokens[j].contains("ID: "))  {
+                    DataItem param = new DataItem(tokens[j-1], tokens[j], currentScope);
+                    table.insert(param);
                     j++;
                     B(tokens[j], item);
                     paramlist2(tokens[j], item);
@@ -506,7 +582,7 @@ public class Project2compilers {
         if(token.equals("[")) {
             j++;
             if(tokens[j].equals("]"))   {
-                //array
+                //array parameter
                 parameter = (typespec + " " + varID + "[]");
                 item.addFuncParams(parameter);
                 j++;
@@ -514,23 +590,45 @@ public class Project2compilers {
             else rejected();
         } // or empty
         else {
+            //regular parameter
             parameter = (typespec + " " + varID);
             item.addFuncParams(parameter);
         }
     }//-------------------------------------------------------------------------
-    public static void compoundstmt(String token)  {
+    public static void compoundstmt(String token, DataItem function)  {
+        //compound statement consists of local declarations and statements
         System.out.println("invoked compound");
         System.out.println(token);
+        boolean defined = false;
+        if(!tokens[j+1].equals("}"))    {
+        
+            defined = true;
+        }
         if(token.equals("{"))   {
+            totalScope++;
+            currentScope++;
             j++;
             localdeclarations2(tokens[j]);
-            statementlist2(tokens[j]);
+            statementlist2(tokens[j], function);
             if(tokens[j].equals("}")) {
+                currentScope--;
                 j++;
+                System.out.println("******** testing checkReturn: " + function.getType());
+                if(currentScope == function.getVal() && !function.getType().contains("void"))  {
+                    System.out.println(function.getID());
+                    function.checkReturn();
+                }
             }
             else rejected();
         }
         else rejected();
+        
+        if(!defined)    {
+            System.out.println("SEMANTIC ERROR: function not defined");
+            rejected();
+        }
+        
+            
     }//-------------------------------------------------------------------------
     public static void localdeclarations2(String token) {
         System.out.println("invoked localdeclarations2");
@@ -541,7 +639,7 @@ public class Project2compilers {
             localdeclarations2(tokens[j]);
         } // or empty
     }//-------------------------------------------------------------------------
-    public static void statementlist2(String token) {
+    public static void statementlist2(String token, DataItem function) {
         System.out.println("invoked statementlist2");
         System.out.println(token);
         //first of statement
@@ -549,40 +647,39 @@ public class Project2compilers {
             token.contains("KEYWORD: if") || token.contains("KEYWORD: while") ||
             token.contains("KEYWORD: return") || token.equals("(") ||
             token.equals("{")) {
-            
-            statement(token);
-            statementlist2(tokens[j]);
+            statement(token, function);
+            statementlist2(tokens[j], function);
         }
         // or empty
     }//-------------------------------------------------------------------------
-    public static void statement(String token)  {
+    public static void statement(String token, DataItem function)  {
         System.out.println("invoked statement");
         System.out.println(token);
         //first of expression-stmt
         if(token.contains("ID: ") || token.contains("NUM") || token.equals("(") ||
            token.equals(";")) {
             
-            D(token);
+            D(token, function);
         }
         //first of compound-stmt
         else if(token.equals("{"))  {
-            compoundstmt(token);
+            compoundstmt(token, function);
         }
         //first of selection-stmt
         else if(token.contains("KEYWORD: if"))  {
-            selectionstmt(token);
+            selectionstmt(token, function);
         }
         //first of iteration-stmt
         else if(token.contains("KEYWORD: while"))   {
-            iterationstmt(token);
+            iterationstmt(token, function);
         }
         //first of return-stmt
         else if(token.contains("KEYWORD: return"))   {
-            returnstmt(token);
+            returnstmt(token, function);
         }
         else rejected();
     }//-------------------------------------------------------------------------
-    public static void selectionstmt(String token)  { 
+    public static void selectionstmt(String token, DataItem function)  { 
         System.out.println("invoked selectionstmt");
         System.out.println(token);
         if(token.contains("KEYWORD: if"))   {
@@ -592,8 +689,8 @@ public class Project2compilers {
                 expression(tokens[j]);
                 if(tokens[j].equals(")"))   {
                     j++;
-                    statement(tokens[j]); // CHECK THIS *******************
-                    C(tokens[j]);
+                    statement(tokens[j], function); // CHECK THIS *******************
+                    C(tokens[j], function);
                 }
                 else rejected();   
             }
@@ -601,16 +698,16 @@ public class Project2compilers {
         }
         else rejected();
     }//-------------------------------------------------------------------------
-    public static void C(String token)  {
+    public static void C(String token, DataItem function)  {
         System.out.println("invoked C");
         System.out.println(token);
         if(token.contains("KEYWORD: else"))     {
             j++;
-            statement(tokens[j]);
+            statement(tokens[j], function);
         }
         // or empty
     }//-------------------------------------------------------------------------
-    public static void iterationstmt(String token)  {
+    public static void iterationstmt(String token, DataItem function)  {
         System.out.println("invoked iterationstmt");
         System.out.println(token);
         if(token.contains("KEYWORD: while")) {
@@ -620,7 +717,7 @@ public class Project2compilers {
                 expression(tokens[j]);
                 if(tokens[j].equals(")"))   {
                     j++;
-                    statement(tokens[j]);
+                    statement(tokens[j], function);
                 }
                 else rejected();
             }
@@ -628,36 +725,64 @@ public class Project2compilers {
         }
         else rejected();
     }//-------------------------------------------------------------------------
-    public static void returnstmt(String token) {
+    public static void returnstmt(String token, DataItem function) {
         System.out.println("invoked returnstmt");
         System.out.println(token);
+       
+        //SEMANTICS: void functions cannot return values 
+        if(function.getType().contains("void")) {
+            if(token.contains("return") && tokens[j+1].contains(";")) {
+                function.addReturn("void");
+            }
+            else    {
+                System.out.println("SEMANTIC ERROR: void cannot return a value");
+                rejected();
+            }
+        }
         if(token.contains("KEYWORD: return"))   {
             j++;
-            D(tokens[j]);    
+            D(tokens[j], function);    
         }
         else rejected();
     }
     //-----------------------------------------------------------------------
-    public static void D(String token)  {
+    public static void D(String token, DataItem function)  {
         System.out.println("invoked D");
         System.out.println(token);
-        // first of expression
+        String ftype = function.getType();
+        //SEMANTICS: int/float returns corresponding numbers
+        if(token.contains("NUM") && tokens[j+1].equals(";"))    {
+            if(token.contains("INT"))   {
+                function.addReturn("int");
+            }
+            else if(token.contains("FLOAT"))    {
+                function.addReturn("float");
+            }
+        }
         if(token.equals("(") || token.contains("ID: ") || token.contains("NUM"))   { 
+            rtrn = true;
             expression(token);
+            rtrn = false;
             if(tokens[j].equals(";"))   {
                 j++;
             }
             else rejected();
         }
-        else if(token.equals(";"))
+        else if(token.equals(";"))  {
+            //SEMANTICS: if not void type, must return a value
+            if(!function.getType().contains("void"))    {
+                System.out.println("SEMANTIC ERROR: missing return value");
+                rejected();
+            }
             j++;
-        
+        }
         else rejected();
     }// ------------------------------------------------------------------------
     public static void expression(String token) { 
         System.out.println("invoked expression");
         System.out.println(token);
         if(token.contains("ID: "))  {
+            lookup(token);
             j++;
             EV(tokens[j]);
         }
@@ -813,6 +938,7 @@ public class Project2compilers {
             else rejected();
         }
         else if(token.contains("ID: ")) {     
+            lookup(token);
             j++;
             FX(tokens[j]);
         }
@@ -1084,6 +1210,7 @@ public class Project2compilers {
         }
         if(token.equals("{"))   {
             currentScope += 1;
+            
             System.out.println(token);
             output(token);
         }
@@ -1260,9 +1387,9 @@ public class Project2compilers {
                         String s4 = new String(chars, startIndex, tokenLength);
                         currentScope = readToken(scope, s4);
                         scope = currentScope;
-                        System.out.println("Testing tokens: " + s4); //testing
+                        
                         String s5 = Character.toString(chars[x]);
-                        System.out.println("Testing tokens: " +s5); //testing
+                        
                         currentScope = readToken(scope, s5);
                         scope = currentScope;
                         tokenLength = 0;
