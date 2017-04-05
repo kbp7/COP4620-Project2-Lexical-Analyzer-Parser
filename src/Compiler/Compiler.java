@@ -2,7 +2,7 @@
 Kevin Poon
 n00900355
  */
-package project2compilers;
+package Compiler;
 
 import java.io.*;
 import java.io.BufferedReader;
@@ -66,13 +66,13 @@ class DataItem {
         }
         else    { //SEMANTICS: return type must match function type
             System.out.println("SEMANTIC ERROR: incorrect return type");
-            Project2compilers.rejected();
+            Compiler.rejected();
         }
     }
     public void checkReturn()  {
-        if(!returnStmt) {
+        if(!returnStmt && !type.contains("void")) {
             System.out.println("SEMANTIC ERROR: missing return statement");
-            Project2compilers.rejected();
+            Compiler.rejected();
         }
     }
 //--------------------------------------------------------------
@@ -181,12 +181,12 @@ class HashTable
         if (hashArray[hashVal] == null) {
             if(key.contains("main") && mainCount<1)    {
                 mainCount += 1;
-                Project2compilers.hasMain = true;
+                Compiler.hasMain = true;
                 hashArray[hashVal] = item;    // insert item
             }
             else if(key.contains("main") && mainCount>0)    {
                 System.out.println("ERROR: main method already exists");
-                Project2compilers.rejected();
+                Compiler.rejected();
             }
             else
                 hashArray[hashVal] = item;    // insert item
@@ -220,6 +220,20 @@ class HashTable
         //System.out.println("index "+hashVal+" contains "+ hashArray[hashVal]);
         return -1;                  // can't find item
     }  
+    //--------------------------------------------------------------
+    public DataItem searchlocal(String key)    // find item with key
+        {
+        System.out.println("***Scanning all scoopes for: " + key);
+        for(int j = 0; j < arraySize; j++)  {
+            if((hashArray[j] != null) && hashArray[j].getID().equals(key))    {
+                System.out.println("Found the key");
+                return hashArray[j];
+            }
+        }
+        System.out.println("Couldn't find item");
+        return null;
+    }  
+    //-------------------------------------------------------------
     public DataItem getItem(int hashVal)    {
         return hashArray[hashVal];
     }
@@ -231,7 +245,7 @@ class HashTable
         }
         else    {
             System.out.println("SEMANTIC ERROR: already declared");
-            Project2compilers.rejected();
+            Compiler.rejected();
         }
     }
     //---------------------------------------------------------------------------
@@ -253,7 +267,7 @@ class HashTable
 }  // end class HashTable
 
 ////////////////////////////////////////////////////////////////
-public class Project2compilers {
+public class Compiler {
 
     public String[] keywords = {"else", "if", "int", "return", "void", "while"};
     public String[] special;
@@ -270,10 +284,11 @@ public class Project2compilers {
     public static String[] tokens;
     public static int j;
     public static HashTable table;
+    public static Stack<HashTable> stack;
     
     public static void main(String[] args)  throws IOException  {
         System.out.println("Input file: " + args[0]);
-        URL path = Project2compilers.class.getResource(args[0]);
+        URL path = Compiler.class.getResource(args[0]);
         File file = new File(path.getFile());  
         File out = new File("tokens.txt");
         FileOutputStream fos = new FileOutputStream(out);
@@ -311,7 +326,10 @@ public class Project2compilers {
     }//end main    
 //--------------------------------------------------------------------
     public static void parser(File out) throws IOException {
-        table = new HashTable(100); //symbol table
+        table = new HashTable(20); //symbol table
+        stack = new Stack<HashTable>();
+        openScope(table);
+        
         BufferedReader br = new BufferedReader(new FileReader(out));
         String line;
         tokens = new String[500];
@@ -340,8 +358,55 @@ public class Project2compilers {
     public static void accept() {
         System.out.println("Detected $, finished parsing.");
     }
-    //--------------------------------------------------------------------------
+    //=========================== new ==========================================
+    public static void openScope(HashTable ht)  {
+        stack.add(ht);
+    }  
+    public static void closeScope()  {
+        if(stack.empty())   {
+            System.out.println("ERROR: no scope");
+            rejected();
+        }
+        stack.pop();
+    } 
+    public static void addSym(DataItem item) {
+	if (stack.empty()) {
+	    System.out.println("ERROR: nowhere to add");
+            rejected();
+	}
+	stack.peek().insert(item);
+    }
+    public static DataItem lookup(DataItem item) {
+	if (stack.empty()) {
+	    System.out.println("ERROR: nowhere to add");
+            rejected();
+	}
+	
+	for (int i = stack.size() - 1; i >= 0; i--) {
+	    DataItem temp = stack.elementAt(i).searchlocal(item.getID());
+	    if (temp != null) {
+                return temp;
+            }
+	}
+        System.out.println("Failed to find it");
+	return null;
+    }
+    //==========================================================================
     public static boolean lookup(String token)     {
+        if (stack.empty()) {
+	    System.out.println("ERROR: nowhere to add");
+            rejected();
+	}
+	
+	for (int i = stack.size() - 1; i >= 0; i--) {
+	    DataItem temp = stack.elementAt(i).searchlocal(token);
+	    if (temp != null) {
+                return true;
+            }
+	}
+        System.out.println("Failed to find it");
+	return false;
+        /*
         int hashval = table.hashFunc(token);
         boolean result = false;
         if(table.find(hashval, token) > 0)  { //declared
@@ -353,22 +418,24 @@ public class Project2compilers {
                 rejected();
             }
         return result;
+        */
     }
     //--------------------------------------------------------------------------
     public static String lookupType(String token)     {
-        int hashval = table.hashFunc(token);
-        int index = table.find(hashval, token);
-        DataItem item;
-        if(index > 0)  { //declared
-                System.out.println("*** Found ID in symtab");
-                item = table.getItem(hashval);
-                return item.getType();
+        if (stack.empty()) {
+	    System.out.println("ERROR: nowhere to add");
+            rejected();
+	}
+	
+	for (int i = stack.size() - 1; i >= 0; i--) {
+	    DataItem temp = stack.elementAt(i).searchlocal(token);
+	    if (temp != null) {
+                return temp.getType();
             }
-            else    {
-                System.out.println("SEMANTIC ERROR: variable not declared");
-                rejected();
-            }
-        return null;
+	}
+        System.out.println("Failed to find it");
+	return null;
+        
     }
     //--------------------------------------------------------------------------
     public static void program(String token)    {   //good
@@ -454,7 +521,8 @@ public class Project2compilers {
             item.declareVar(varType, 0);
             int hashval = table.hashFunc(varID);
             if(table.find(hashval, varID) < 0)  {
-                table.insert(item);
+                //table.insert(item);
+                addSym(item);
             }
             else    {
                 table.update(hashval, varID, item);
@@ -486,7 +554,8 @@ public class Project2compilers {
                         
                         //variable is an array
                         item.declareVar(varType, size);
-                        table.insert(item);
+                        //table.insert(item);
+                        addSym(item);
                         j++;
                     }
                     else rejected();
@@ -511,7 +580,8 @@ public class Project2compilers {
         if(token.equals("("))   {
             item.declareFunc(funcType, 0, checkMain);
             //might change when to insert item into symtab
-            table.insert(item);
+            //table.insert(item);
+            addSym(item);
             j++;
             params(tokens[j], item);
             if(tokens[j].equals(")")) {
@@ -531,7 +601,8 @@ public class Project2compilers {
             if(tokens[j].contains("ID: "))  {
                 //SEMANTICS: add parameter to symbol table
                 DataItem param = new DataItem(token, tokens[j], currentScope);
-                table.insert(param);
+                //table.insert(param);
+                addSym(param);
                 j++;
                 B(tokens[j], item);
                 paramlist2(tokens[j], item);
@@ -542,7 +613,8 @@ public class Project2compilers {
             j++;
             if(tokens[j].contains("ID: "))  {
                 DataItem param = new DataItem(token, tokens[j], currentScope);
-                table.insert(param);
+                //table.insert(param);
+                addSym(param);
                 j++;
                 B(tokens[j], item);
                 paramlist2(tokens[j], item);
@@ -563,7 +635,8 @@ public class Project2compilers {
                 j++;
                 if(tokens[j].contains("ID: "))  {
                     DataItem param = new DataItem(tokens[j-1], tokens[j], currentScope);
-                    table.insert(param);
+                    //table.insert(param);
+                    addSym(param);
                     j++;
                     B(tokens[j], item);
                     paramlist2(tokens[j], item);
@@ -601,23 +674,26 @@ public class Project2compilers {
         System.out.println(token);
         boolean defined = false;
         if(!tokens[j+1].equals("}"))    {
-        
+            
             defined = true;
         }
         if(token.equals("{"))   {
+            openScope(new HashTable(20));
             totalScope++;
             currentScope++;
             j++;
             localdeclarations2(tokens[j]);
             statementlist2(tokens[j], function);
             if(tokens[j].equals("}")) {
-                currentScope--;
-                j++;
                 System.out.println("******** testing checkReturn: " + function.getType());
                 if(currentScope == function.getVal() && !function.getType().contains("void"))  {
                     System.out.println(function.getID());
                     function.checkReturn();
                 }
+                closeScope();
+                currentScope--;
+                j++;
+                
             }
             else rejected();
         }
@@ -627,6 +703,8 @@ public class Project2compilers {
             System.out.println("SEMANTIC ERROR: function not defined");
             rejected();
         }
+        //SEMANTICS: check for a return statement
+        function.checkReturn();
         
             
     }//-------------------------------------------------------------------------
@@ -759,10 +837,22 @@ public class Project2compilers {
                 function.addReturn("float");
             }
         }
+        //SEMANTICS: return type - simple variable
+        if(token.contains("ID: ") && tokens[j+1].equals(";"))   {
+            if(ftype.contains(lookupType(token)))  {
+                if(token.contains("INT"))   {
+                    function.addReturn("int");
+                }
+                else if(token.contains("FLOAT"))    {
+                function.addReturn("float");
+                }
+            }
+            else rejected();
+        }
         if(token.equals("(") || token.contains("ID: ") || token.contains("NUM"))   { 
-            rtrn = true;
+            //rtrn = true;
             expression(token);
-            rtrn = false;
+            //rtrn = false;
             if(tokens[j].equals(";"))   {
                 j++;
             }
